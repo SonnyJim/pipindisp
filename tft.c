@@ -11,7 +11,7 @@ Works with Raspberry pi
 #include <stdio.h>
 #include "GC9A01.h"
 
-#define WORKING_DIR "/home/pi/src/ER-TFTM1.28-1_Rapberry Pi_Tutorial/ER-TFTM1.28-1/"
+#define WORKING_DIR "/usr/local/share/pipindisp/data/"
 int main(int argc, char **argv)
 {
     FILE *pFile ;
