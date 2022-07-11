@@ -9,6 +9,7 @@ Works with Raspberry pi
 
 #include <bcm2835.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "GC9A01.h"
 
 #define WORKING_DIR "/usr/local/share/pipindisp/data/"
@@ -25,9 +26,11 @@ int main(int argc, char **argv)
     int pingpong = 0;
     int total_frames = 77;
     int delay;
-    if(!bcm2835_init())
+    
+    if(!bcm2835_init() || geteuid() != 0)
     {
 	printf("BCM2835 init failed\n");
+	printf("Are you root?\n");
         return -1;
     }
 
@@ -37,14 +40,14 @@ int main(int argc, char **argv)
     delay = 0;
     direction = 0;
    
+    sprintf (imagename, "trippy");
+    total_frames = 18;
+    delay = 40;
    /* 
     sprintf (imagename, "Neon_swirl");
     total_frames = 29;
-   */ 
-    
     sprintf (imagename, "Fire_swirl");
     total_frames = 50;
-    /*
     sprintf (imagename, "Elvira");
     pingpong = 1;
     total_frames = 77;
@@ -106,7 +109,9 @@ int main(int argc, char **argv)
     	{
     		frame_num++;
 		if (frame_num > total_frames)
+		{
 			frame_num = 1;
+		}
 	}
    }
    bcm2835_spi_end();
