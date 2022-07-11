@@ -29,6 +29,10 @@ enum Color {
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240
 
+#define NUM_DISPLAYS 3
+#define CS0 8
+#define CS1
+#define CS2
 #define RST 25
 #define DC  24
 

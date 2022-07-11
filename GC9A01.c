@@ -10,13 +10,17 @@ EastRising Technology Co.,LTD
 char buffer[TFT_WIDTH * TFT_HEIGHT * 2];
 
 void command(char cmd) {
+    bcm2835_gpio_write(CS0, LOW);
     bcm2835_gpio_write(DC, LOW);
     bcm2835_spi_transfer(cmd);
+    bcm2835_gpio_write(CS0, HIGH);
 }
 
 void data(char cmd) {
+    bcm2835_gpio_write(CS0, LOW);
     bcm2835_gpio_write(DC, HIGH);
     bcm2835_spi_transfer(cmd);
+    bcm2835_gpio_write(CS0, HIGH);
 }
 
 void GC9A01_begin()
@@ -28,8 +32,13 @@ void GC9A01_begin()
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);     //The default
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                  //The default
     bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);  //The default
+/*
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                     //The default
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);     //the default
+*/
+    bcm2835_spi_chipSelect (BCM2835_SPI_CS_NONE); //Manual chip select
+    bcm2835_gpio_fsel(CS0, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_write(CS0, LOW );
 
     bcm2835_gpio_write(RST, HIGH);
     bcm2835_delay(10);
@@ -443,7 +452,9 @@ void GC9A01_display() {
 
     command(0x2C);
     bcm2835_gpio_write(DC, HIGH);
+    bcm2835_gpio_write(CS0, LOW);
     bcm2835_spi_transfern(buffer, sizeof(buffer));
+    bcm2835_gpio_write(CS0, HIGH);
 }
 
 void GC9A01_clear_screen(uint16_t hwColor) {

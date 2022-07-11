@@ -72,45 +72,45 @@ int main(int argc, char **argv)
 */
     while (1)
     {
-	sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
-     pFile = fopen(filename, "r");
-    if (pFile == NULL) {
-        printf("file not exist\n");
-	printf (filename);
-        return 0;
-    }
-  
-    fseek(pFile, 54, 0);
-    fread(bmpBuffer, pixelSize, TFT_WIDTH * TFT_HEIGHT, pFile);
-    fclose(pFile);
-    //GC9A01_setdisplay (0);
-    GC9A01_bitmap24(0, 0, bmpBuffer, 240, 240);
-    GC9A01_display();
-    bcm2835_delay (delay);
-    if (pingpong)
-    {
-    	if (direction)
-  	  {
+    	sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
+     	pFile = fopen(filename, "r");
+    	if (pFile == NULL) 
+    	{
+       		printf("file not exist\n");
+		printf (filename);
+        	return 0;
+    	}
+	fseek(pFile, 54, 0);
+	fread(bmpBuffer, pixelSize, TFT_WIDTH * TFT_HEIGHT, pFile);
+	fclose(pFile);
+	//GC9A01_setdisplay (0);
+	GC9A01_bitmap24(0, 0, bmpBuffer, 240, 240);
+	GC9A01_display();
+	bcm2835_delay (delay);
+    	if (pingpong)
+    	{
+    		if (direction)
+  	  	{
 		    frame_num++;
-    		if (frame_num >= total_frames)
+    		    if (frame_num >= total_frames)
 			direction = 0;
-  	  }
-  	  else
-      	  {
-		    frame_num--;
-    		    if (frame_num <= 1)
-		        direction = 1;
-      	  }
-    }
-    else
-    {
-    	frame_num++;
-	if (frame_num > total_frames)
-	   frame_num = 1;
-    }
-}
+  	  	}
+		else
+		{
+			frame_num--;
+			if (frame_num <= 1)
+				direction = 1;
+		}
+    	}
+    	else
+    	{
+    		frame_num++;
+		if (frame_num > total_frames)
+			frame_num = 1;
+	}
+   }
    bcm2835_spi_end();
-    bcm2835_close();
-    return 0;
+   bcm2835_close();
+   return 0;
 }
 
