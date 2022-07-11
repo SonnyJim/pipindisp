@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
   
     GC9A01_begin();
-    bcm2835_spi_set_speed_hz (40000000); //Set the SPI speed higher
+    bcm2835_spi_set_speed_hz (60000000); //Set the SPI speed higher
     delay = 0;
     direction = 0;
    
