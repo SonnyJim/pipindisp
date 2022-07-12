@@ -35,23 +35,35 @@ void video_play ();
 
 void signal_cb_handler(int signum) 
 {
-	printf ("Caught signal %i\n", signum);
+	printf ("\nCaught signal %i\n", signum);
 	running = 0;
 }
 
 int main(int argc, char **argv)
 {
 	signal(SIGINT, signal_cb_handler);
-   if(!bcm2835_init() || geteuid() != 0)
-    {
-	printf("BCM2835 init failed\n");
-	printf("Are you root?\n");
-        return -1;
-    }
-
-  
-    GC9A01_begin();
-    bcm2835_spi_set_speed_hz (61000000); //Set the SPI speed higher
+	if(!bcm2835_init() || geteuid() != 0)
+	{
+		printf("BCM2835 init failed\n");
+		printf("Are you root?\n");
+		return -1;
+	}
+	printf ("Dropping priviledges\n");
+	printf ("Current GID %i UID %i\n", getgid(), getuid());
+	if (setgid(1000) == -1) 
+	{
+		printf ("Failed to drop root\n");
+		return -1;
+	}
+	if (setuid(1000) == -1) 
+	{
+		printf ("Failed to drop root\n");
+		return -1;
+	}
+    	printf ("New GID %i UID %i\n", getgid(), getuid());
+	
+	GC9A01_begin();
+	bcm2835_spi_set_speed_hz (60000000); //Set the SPI speed higher, 6Mhz seems to be the limit for these displays
     delay = 0;
     direction = 0;
    
@@ -90,8 +102,10 @@ int main(int argc, char **argv)
     delay = 60;
     
 */
+   GC9A01_set_brightness (0xFF);
 	video_play();
 
+	printf ("Cleaning up..\n");
     GC9A01_clear();
     GC9A01_display();
   bcm2835_spi_end();
