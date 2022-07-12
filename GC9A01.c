@@ -14,6 +14,7 @@ void command(char cmd) {
     bcm2835_gpio_write(DC, LOW);
     bcm2835_spi_transfer(cmd);
     bcm2835_gpio_write(CS0, HIGH);
+   
 }
 
 void data(char cmd) {
@@ -287,9 +288,9 @@ void GC9A01_begin()
 	command(0x21);     
 
 
-  	command(0x11); 
+  	command(CMD_SLEEP_OFF); 
     	bcm2835_delay(120);
-  	command(0x29); 
+  	command(CMD_DISPLAY_ON); 
 	bcm2835_delay(20);
 
   
@@ -436,21 +437,22 @@ void GC9A01_bitmap24(uint8_t x, uint8_t y, uint8_t *pBmp, char chWidth, char chH
     }
 }
 
+//Pushes the buffer to the display
 void GC9A01_display() {
  
-    command(0x2a);
+    command(CMD_COLUMN_ADDR_SET);
     data(0);
     data(0);
     data((TFT_WIDTH-1) >> 8);
     data(TFT_WIDTH-1);
 
-    command(0x2b);
+    command(CMD_ROW_ADDR_SET);
     data(0);
     data(0);
     data((TFT_HEIGHT-1) >> 8);
     data(TFT_HEIGHT-1);
 
-    command(0x2C);
+    command(CMD_MEMORY_WRITE);
     bcm2835_gpio_write(DC, HIGH);
     bcm2835_gpio_write(CS0, LOW);
     bcm2835_spi_transfern(buffer, sizeof(buffer));

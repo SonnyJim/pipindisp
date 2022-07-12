@@ -48,6 +48,34 @@ void GC9A01_char3216(uint8_t x, uint8_t y, uint8_t chChar, uint16_t hwColor);
 void GC9A01_char(uint8_t x, uint8_t y, char acsii, char size, char mode, uint16_t hwColor);
 void GC9A01_clear_screen(uint16_t hwColor);
 void GC9A01_draw_point(int chXpos, int chYpos, uint16_t hwColor);
+void cmd_read_display_id ();
+/* COMMANDS */
+
+#define CMD_READ_DISPLAY_ID			0x04
+
+#define CMD_COLUMN_ADDR_SET 			0x2A
+#define CMD_ROW_ADDR_SET 			0x2B
+#define CMD_MEMORY_WRITE 			0x2C
+#define CMD_INTER_REG_ENABLE1			0xFE //Used for Inter_ command controlling
+#define CMD_INTER_REG_ENABLE2			0xEF
+#define CMD_DISPLAY_FUNC_CTRL			0xB6
+#define CMD_MEMORY_ACCESS_CTRL			0x36
+#define CMD_PIXEL_FORMAT_SET			0x3A
+#define CMD_POWER_CTRL2				0xC3
+#define CMD_POWER_CTRL3				0xC4
+#define CMD_POWER_CTRL4				0xC9
+#define CMD_SET_GAMMA1				0xF0
+#define CMD_SET_GAMMA2				0xF1
+#define CMD_SET_GAMMA3				0xF2
+#define CMD_SET_GAMMA4				0xF3
+#define CMD_FRAME_RATE				0xE8
+#define CMD_TEARING_EFFECT_LINE_ON		0x35
+#define CMD_DISPLAY_INVERSION_ON		0x21
+#define CMD_SLEEP_ON				0x10
+#define CMD_SLEEP_OFF				0x11
+#define CMD_DISPLAY_ON				0x29
+#define CMD_IDLE_MODE_OFF			0x38 //Works
+#define CMD_IDLE_MODE_ON			0x39 //Works
 
 static const uint8_t mono_bmp[2048]=
 {

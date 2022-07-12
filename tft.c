@@ -11,10 +11,9 @@ Works with Raspberry pi
 #include <stdio.h>
 #include <unistd.h>
 #include "GC9A01.h"
+#include <sys/stat.h>
 
 #define WORKING_DIR "/usr/local/share/pipindisp/data/"
-int main(int argc, char **argv)
-{
     FILE *pFile ;
     /* 1 pixel of 888 bitmap = 3 bytes */
     size_t pixelSize = 3;
@@ -27,7 +26,11 @@ int main(int argc, char **argv)
     int total_frames = 77;
     int delay;
     
-    if(!bcm2835_init() || geteuid() != 0)
+void video_play2();
+ 
+int main(int argc, char **argv)
+{
+   if(!bcm2835_init() || geteuid() != 0)
     {
 	printf("BCM2835 init failed\n");
 	printf("Are you root?\n");
@@ -73,6 +76,56 @@ int main(int argc, char **argv)
     delay = 60;
     
 */
+    video_play2 ();
+  bcm2835_spi_end();
+   bcm2835_close();
+   return 0;
+}
+
+long video_get_filesize (char* filename)
+{
+	struct stat st;
+	printf ("filename: %s\n", filename);
+	stat(filename, &st);
+	return st.st_size;
+}
+
+#define HEADER_SIZE 54
+
+void video_play2 ()
+{
+	uint8_t *buffer;
+    	sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
+	long framesize = video_get_filesize(filename);
+	printf ("Frame size: %li\n", framesize);
+	framesize -= HEADER_SIZE;
+	buffer = malloc (framesize * total_frames);
+	
+	for (int i=0;i < total_frames;i++)
+	{
+    		sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
+		pFile = fopen(filename, "r");
+    		if (pFile == NULL) 
+    		{
+       			printf("file not exist\n");
+			printf (filename);
+        		return;
+    		}	
+		fseek(pFile, HEADER_SIZE, 0);
+		fread(buffer + (framesize*i), pixelSize, TFT_WIDTH * TFT_HEIGHT, pFile);
+		fclose(pFile);
+		frame_num++;
+	}
+	for (int i = 0; i < total_frames;i++)
+	{
+		GC9A01_bitmap24(0, 0, buffer + (framesize*i), 240, 240);
+		GC9A01_display();
+	}
+		
+}
+
+int video_play ()
+{
     while (1)
     {
     	sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
@@ -83,7 +136,7 @@ int main(int argc, char **argv)
 		printf (filename);
         	return 0;
     	}
-	fseek(pFile, 54, 0);
+	fseek(pFile, HEADER_SIZE, 0);
 	fread(bmpBuffer, pixelSize, TFT_WIDTH * TFT_HEIGHT, pFile);
 	fclose(pFile);
 	//GC9A01_setdisplay (0);
@@ -114,8 +167,5 @@ int main(int argc, char **argv)
 		}
 	}
    }
-   bcm2835_spi_end();
-   bcm2835_close();
-   return 0;
+ 
 }
-
