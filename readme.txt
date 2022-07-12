@@ -1,4 +1,5 @@
-
+pipindisp, heavily based on the example code from:
+https://www.buydisplay.com/Raspberry_Pi/ER-TFTM1.28-1_Rapberry%20Pi_Tutorial.zip
  
   == Development Environment ==
   * OS: Raspbian for Raspberry Pi

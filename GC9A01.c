@@ -207,7 +207,7 @@ void GC9A01_begin()
 	data(0x08);
 	data(0x03);
 
-	command(0xE8);			
+	command(CMD_FRAME_RATE); //Not sure this is what it says it is in the docs			
 	data(0x34);
 
 	command(0x62);			
@@ -468,3 +468,8 @@ void GC9A01_clear_screen(uint16_t hwColor) {
     }
 }
 
+void GC9A01_set_brightness (uint8_t brightness)
+{
+	command(0x51);
+	data(brightness);
+}

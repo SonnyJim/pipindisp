@@ -48,7 +48,7 @@ void GC9A01_char3216(uint8_t x, uint8_t y, uint8_t chChar, uint16_t hwColor);
 void GC9A01_char(uint8_t x, uint8_t y, char acsii, char size, char mode, uint16_t hwColor);
 void GC9A01_clear_screen(uint16_t hwColor);
 void GC9A01_draw_point(int chXpos, int chYpos, uint16_t hwColor);
-void cmd_read_display_id ();
+void GC9A01_set_brightness (uint8_t brightness);
 /* COMMANDS */
 
 #define CMD_READ_DISPLAY_ID			0x04
