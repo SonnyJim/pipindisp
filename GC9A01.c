@@ -436,6 +436,27 @@ void GC9A01_bitmap24(uint8_t x, uint8_t y, uint8_t *pBmp, char chWidth, char chH
         }
     }
 }
+void GC9A01_display_buff(uint8_t *buff) {
+ 
+    command(CMD_COLUMN_ADDR_SET);
+    data(0);
+    data(0);
+    data((TFT_WIDTH-1) >> 8);
+    data(TFT_WIDTH-1);
+
+    command(CMD_ROW_ADDR_SET);
+    data(0);
+    data(0);
+    data((TFT_HEIGHT-1) >> 8);
+    data(TFT_HEIGHT-1);
+
+    command(CMD_MEMORY_WRITE);
+    bcm2835_gpio_write(DC, HIGH);
+    bcm2835_gpio_write(CS0, LOW);
+    bcm2835_spi_transfern(buff, sizeof(buff));
+    bcm2835_gpio_write(CS0, HIGH);
+}
+
 
 //Pushes the buffer to the display
 void GC9A01_display() {
