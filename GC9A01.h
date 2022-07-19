@@ -38,7 +38,8 @@ enum Color {
 
 void GC9A01_begin();
 void GC9A01_display();
-void GC9A01_display_buff(uint8_t *buff);
+void GC9A01_display_buff(uint8_t *buff, long framesize);
+void GC9A01_bitmap24_buff(uint8_t x, uint8_t y, uint8_t *pBmp, char chWidth, char chHeight, uint8_t *buff);
 void GC9A01_clear();
 void GC9A01_pixel(int x,int y, char color);
 void GC9A01_mono_bitmap(uint8_t x, uint8_t y, const uint8_t *pBmp, char chWidth, char chHeight, uint16_t hwColor);

@@ -6,20 +6,23 @@ Display is Hardward SPI 4-Wire SPI Interface
 Tested and worked with: 
 Works with Raspberry pi
 ****************************************************/
-
+//TODO Check for already running
+//
 #include <bcm2835.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "GC9A01.h"
 #include <sys/stat.h>
 #include <signal.h>
+#include <string.h>
+#include <errno.h>
 
 #define HEADER_SIZE 54
 #define WORKING_DIR "/usr/local/share/pipindisp/data/"
 
 FILE *pFile ;
 /* 1 pixel of 888 bitmap = 3 bytes */
-size_t pixelSize = 3;
+const size_t pixelSize = 3;
 unsigned char bmpBuffer[TFT_WIDTH * TFT_HEIGHT * 3];
 char filename[400];
 char imagename[200];
@@ -29,9 +32,24 @@ int pingpong = 0;
 int total_frames = 77;
 int delay;
 
+struct display
+{
+	char imagename[255];
+	char filename[1024];
+	long framesize;
+	int frame_count;
+	int frame_current;
+	int delay;
+	uint8_t *buffer;
+	int ce_pin; //Which pin to toggle to enable the display
+};
+
+struct display disp1;
+
 int running;
 
 void video_play ();
+long video_get_framesize (char* filename);
 
 void signal_cb_handler(int signum) 
 {
@@ -63,14 +81,14 @@ int main(int argc, char **argv)
     	printf ("New GID %i UID %i\n", getgid(), getuid());
 	
 	GC9A01_begin();
-	bcm2835_spi_set_speed_hz (60000000); //Set the SPI speed higher, 6Mhz seems to be the limit for these displays
+	bcm2835_spi_set_speed_hz (40000000); //Set the SPI speed higher, 6Mhz seems to be the limit for these displays
     delay = 0;
     direction = 0;
    
     GC9A01_clear();
     GC9A01_display();
-    sprintf (imagename, "trippy");
-    total_frames = 18;
+    sprintf (imagename, "Neon_swirl");
+    total_frames = 29;
     delay = 40;
    /* 
     sprintf (imagename, "Neon_swirl");
@@ -102,8 +120,21 @@ int main(int argc, char **argv)
     delay = 60;
     
 */
-   GC9A01_set_brightness (0xFF);
-	video_play();
+   /*
+   strcpy (disp1.imagename, "trippy");
+   disp1.frame_count = 18;
+   disp1.delay = 0;
+   disp1.frame_current = 0;
+   sprintf (disp1.filename, "%s%s/image%03d.bmp", WORKING_DIR, disp1.imagename, disp1.frame_current);
+   //disp1.framesize = video_get_framesize (disp1.filename);
+   disp1.buffer = malloc (TFT_WIDTH * TFT_HEIGHT * pixelSize * disp1.frame_count);
+   if (disp1.buffer == NULL)
+   {
+   	printf ("Error mallocing buffer for disp1\n");
+	return -1;
+   }
+   */
+   video_play();
 
 	printf ("Cleaning up..\n");
     GC9A01_clear();
@@ -124,55 +155,65 @@ long video_get_framesize (char* filename)
 	return (st.st_size - HEADER_SIZE);
 }
 
-
-void video_load_buffer(uint8_t *buffer, long framesize)
+void video_load_buffer_raw (uint8_t *buff, long framesize)
 {
-	printf ("Filling buffer\n");
-	
-	for (int i=0;i < total_frames;i++)
+	uint8_t *framedata;
+	FILE *bmpfile;
+
+	framedata = malloc(TFT_WIDTH * TFT_HEIGHT * pixelSize);
+	if (framedata == NULL)
 	{
-    		sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, frame_num);
-		pFile = fopen(filename, "r");
-    		if (pFile == NULL) 
+		printf ("Error malloc\n");
+		exit(0);
+	}
+
+	for (int i=0;i < total_frames ;i++)
+	{
+    		sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, i+1);
+		bmpfile = fopen(filename, "r");
+    		if (bmpfile == NULL) 
     		{
-       			printf("Error couldn't open file for reading %s\n", filename);
+       			printf("Error couldn't open file for reading %s Error %i \n", filename, errno);
         		return;
     		}	
-		fseek(pFile, HEADER_SIZE, 0);
-		fread(buffer + (framesize*i), pixelSize, TFT_WIDTH * TFT_HEIGHT, pFile);
-		fclose(pFile);
-		frame_num++;
+		else
+			printf ("Opening %s\n", filename);
+		fseek(bmpfile, HEADER_SIZE, 0);
+		fread(framedata, pixelSize, TFT_WIDTH * TFT_HEIGHT, bmpfile);
+		fclose(bmpfile);
+		GC9A01_bitmap24_buff (0,0, framedata, TFT_WIDTH, TFT_HEIGHT, buff + (framesize*i));
 		printf (".");
 	}
 	printf ("\n");
+	free (framedata);
+
 
 }
 
-void video_playback (uint8_t *buffer, long framesize)
+void video_playback_raw (uint8_t *buff, long framesize)
 {
-   	while (running)
-	{
-		for (int i = 0; i < total_frames;i++)
+	int i;
+
+		for (i = 0; i < total_frames;i++)
 		{
-			GC9A01_bitmap24(0, 0, buffer + (framesize*i), 240, 240);
-			GC9A01_display();
+			GC9A01_display_buff(buff + (i*framesize), TFT_WIDTH * TFT_HEIGHT * 2);
+			bcm2835_delay (disp1.delay);
 		}
-	}
 }
 
 void video_play ()
 {
-	uint8_t *buffer;
-	sprintf (filename, "%s%s/image%03d.bmp", WORKING_DIR, imagename, 1);
-	long framesize =  video_get_framesize(filename);
+	sprintf (filename, "%s%s/image001.bmp", WORKING_DIR, imagename);
+	long framesize = TFT_WIDTH * TFT_HEIGHT * pixelSize;
 	printf ("Frame size: %li\n", framesize);
 	printf ("buffer size: %li\n", framesize * total_frames);
-	buffer = malloc (framesize * total_frames);
-	video_load_buffer (buffer, framesize);
+	disp1.buffer = malloc (framesize * total_frames * 2);
+	video_load_buffer_raw (disp1.buffer, framesize);
 	printf ("Starting playback\n");
 	running = 1;
-	video_playback (buffer, framesize);
- }
+	while (running)
+		video_playback_raw (disp1.buffer, framesize);
+}
  /*
 int video_play ()
 {

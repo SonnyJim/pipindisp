@@ -6,6 +6,7 @@ EastRising Technology Co.,LTD
 #include <bcm2835.h>
 #include <stdio.h>
 #include "GC9A01.h"
+#include <string.h> //For memcpy
 
 char buffer[TFT_WIDTH * TFT_HEIGHT * 2];
 
@@ -306,6 +307,30 @@ void GC9A01_clear() {
         buffer[i] = 0;
     }
 }
+void GC9A01_draw_point_buff (int x, int y, uint16_t hwColor, uint8_t *buff) {
+    if(x >= TFT_WIDTH || y >= TFT_HEIGHT)
+    {
+        return;
+    }
+    buff[x * 2 + y * TFT_WIDTH * 2] = hwColor >> 8;
+    buff[x * 2 + y * TFT_WIDTH * 2 + 1] = hwColor;
+}
+void GC9A01_bitmap24_buff(uint8_t x, uint8_t y, uint8_t *pBmp, char chWidth, char chHeight, uint8_t *buff) {
+    uint8_t i, j;
+    uint16_t hwColor;
+    uint32_t temp;
+
+    for(j = 0; j < chHeight; j++) {
+        for(i = 0; i < chWidth; i ++) {
+            temp = *(unsigned int*)(pBmp + i * 3 + j * 3 * chWidth);
+            hwColor = RGB(((temp >> 16) & 0xFF),
+                          ((temp >> 8) & 0xFF),
+                           (temp & 0xFF));
+            GC9A01_draw_point_buff(x + i, y + chHeight - 1 - j, hwColor, buff);
+        }
+    }
+}
+
 
 void GC9A01_draw_point(int x, int y, uint16_t hwColor) {
     if(x >= TFT_WIDTH || y >= TFT_HEIGHT)
@@ -436,8 +461,11 @@ void GC9A01_bitmap24(uint8_t x, uint8_t y, uint8_t *pBmp, char chWidth, char chH
         }
     }
 }
-void GC9A01_display_buff(uint8_t *buff) {
- 
+void GC9A01_display_buff(uint8_t *buff, long framesize) {
+    char *temp_ptr;
+
+    temp_ptr = malloc (framesize);
+    memcpy (temp_ptr, buff, framesize);
     command(CMD_COLUMN_ADDR_SET);
     data(0);
     data(0);
@@ -453,8 +481,9 @@ void GC9A01_display_buff(uint8_t *buff) {
     command(CMD_MEMORY_WRITE);
     bcm2835_gpio_write(DC, HIGH);
     bcm2835_gpio_write(CS0, LOW);
-    bcm2835_spi_transfern(buff, sizeof(buff));
+    bcm2835_spi_transfern(temp_ptr, framesize);
     bcm2835_gpio_write(CS0, HIGH);
+    free (temp_ptr);
 }
 
 
