@@ -28,6 +28,7 @@ enum Color {
 //Display defines
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 240
+#define PIXEL_SIZE 3
 
 #define NUM_DISPLAYS 3
 #define CS0 8
