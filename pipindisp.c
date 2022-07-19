@@ -71,8 +71,8 @@ int bcm_init ()
 
 int display_init (struct display *disp)
 {
-	strcpy (disp->imagename, "Pinball_bum");
-	disp->frame_count = 8;
+	strcpy (disp->imagename, "Pink_swirl");
+	disp->frame_count = 24;
 	disp->delay = 80;
 	disp->direction = 0;
 	disp->frame_current = 0;
@@ -130,15 +130,6 @@ int main(int argc, char **argv)
     delay = 60;
     
 	*/
-//sprintf (disp1.filename, "%s%s/image%03d.bmp", WORKING_DIR, disp1.imagename, disp1.frame_current);
-	/*
-	disp1.buffer = malloc (TFT_WIDTH * TFT_HEIGHT * PIXEL_SIZE * disp1.frame_count);
-	if (disp1.buffer == NULL)
-	{
-		printf ("Error mallocing buffer for disp1\n");
-		return -1;
-	}
-	*/
 	video_play(disp1);
 
 	printf ("Cleaning up..\n");
@@ -149,7 +140,7 @@ int main(int argc, char **argv)
    	return 0;
 }
 
-void video_load_buffer_raw (uint8_t *buff)
+void video_load_buffer_raw (struct display *disp)
 {
 	uint8_t *framedata;
 	FILE *bmpfile;
@@ -161,38 +152,28 @@ void video_load_buffer_raw (uint8_t *buff)
 		exit(1);
 	}
 
-	for (int i=0;i < disp1.frame_count ;i++)
+	for (int i=0;i < disp->frame_count ;i++)
 	{
 		//Generate the filename and open it
-    		sprintf (disp1.filename, "%s%s/image%03d.bmp", WORKING_DIR, disp1.imagename, i+1);
-		bmpfile = fopen(disp1.filename, "r");
+    		sprintf (disp->filename, "%s%s/image%03d.bmp", WORKING_DIR, disp->imagename, i+1);
+		bmpfile = fopen(disp->filename, "r");
     		if (bmpfile == NULL) 
     		{
-       			printf("Error couldn't open file for reading %s Error %i \n", disp1.filename, errno);
+       			printf("Error couldn't open file for reading %s Error %i \n", disp->filename, errno);
         		exit(1);
     		}	
 		else
-			printf ("Opening %s\n", disp1.filename);
+			printf ("Opening %s\n", disp->filename);
 		//Seek past the header
 		fseek(bmpfile, HEADER_SIZE, SEEK_SET);
 		//Read into the buffer
 		fread(framedata, PIXEL_SIZE, TFT_WIDTH * TFT_HEIGHT, bmpfile);
 		fclose(bmpfile);
-		//Copy and translate the colour information into the display buffer
-		GC9A01_bitmap24_buff (0,0, framedata, TFT_WIDTH, TFT_HEIGHT, buff + (FRAME_SIZE*i));
+		//Translate the colour information and copy it into the display buffer
+		GC9A01_bitmap24_buff (0,0, framedata, TFT_WIDTH, TFT_HEIGHT, disp->buffer + (FRAME_SIZE*i));
 	}
 	printf ("\n");
 	free (framedata);
-}
-
-void video_playback_raw (uint8_t *buff)
-{
-	int i;
-	for (i = 0; i < disp1.frame_count;i++)
-	{
-		GC9A01_display_buff(buff + (i*FRAME_SIZE), TFT_WIDTH * TFT_HEIGHT * 2);
-		bcm2835_delay (disp1.delay);
-	}
 }
 
 void video_playback_frame (struct display *disp)
@@ -203,7 +184,7 @@ void video_playback_frame (struct display *disp)
 		disp->frame_current = 0;
 }
 
-long long current_timestamp(void)
+long long current_timestamp ()
 {
 	struct timeval tv;
 	gettimeofday(&tv,NULL);
@@ -219,7 +200,7 @@ void video_play (struct display disp)
 		printf ("Error mallocing %i bytes for disp buffer\n", FRAME_SIZE * disp.frame_count);
 		exit (1);
 	}
-	video_load_buffer_raw (disp.buffer);
+	video_load_buffer_raw (&disp);
 	printf ("Starting playback\n");
 	running = 1;
 	while (running)
@@ -229,7 +210,6 @@ void video_play (struct display disp)
 		{
 			video_playback_frame (&disp);
 			disp.last_service = current_timestamp();
-		//	video_playback_raw (disp.buffer);
 		}
 	}
 }
