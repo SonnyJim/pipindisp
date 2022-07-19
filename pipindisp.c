@@ -12,8 +12,10 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
+#include <sys/time.h>
 
-#define HEADER_SIZE 54
+#define HEADER_SIZE 54 //size of the BMP header
 #define WORKING_DIR "/usr/local/share/pipindisp/data/"
 #define FRAME_SIZE TFT_WIDTH * TFT_HEIGHT * PIXEL_SIZE
 
@@ -28,11 +30,12 @@ struct display
 	int direction_current;
 	uint8_t *buffer;
 	int cs_pin; //Which pin enables the display
+	long long last_service; //time in ms when the display was updated last
 };
 
 struct display disp1, disp2, disp3;
 int running;
-void video_play ();
+void video_play (struct display disp);
 
 void signal_cb_handler(int signum) 
 {
@@ -66,19 +69,25 @@ int bcm_init ()
 	return 1;
 }
 
-int display_init ()
+int display_init (struct display *disp)
 {
-	strcpy (disp1.imagename, "Pinball_bum");
-	disp1.frame_count = 8;
-	disp1.delay = 80;
-	disp1.direction = 0;
-	disp1.frame_current = 0;
-	disp1.direction_current = 0;
-	disp1.cs_pin = CS0;
+	strcpy (disp->imagename, "Pinball_bum");
+	disp->frame_count = 8;
+	disp->delay = 80;
+	disp->direction = 0;
+	disp->frame_current = 0;
+	disp->direction_current = 0;
+	disp->cs_pin = CS0;
+	disp->last_service = 0;
 	//TODO Perform some test to see if a device is actually connected
 	GC9A01_clear();
 	GC9A01_display();
 	return 1;
+}
+
+void display_set (struct display *disp)
+{
+	printf ("Test %s\n", disp->imagename);
 }
 
 int main(int argc, char **argv)
@@ -89,7 +98,8 @@ int main(int argc, char **argv)
 		printf ("bcm_init() failed\n");
 		return -1;
 	}
-	display_init ();
+	display_init (&disp1);
+	display_set (&disp1);
 	   /* 
     sprintf (imagename, "Neon_swirl");
     frame_count = 29;
@@ -129,7 +139,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	*/
-	video_play();
+	video_play(disp1);
 
 	printf ("Cleaning up..\n");
     	GC9A01_clear();
@@ -185,51 +195,41 @@ void video_playback_raw (uint8_t *buff)
 	}
 }
 
-void video_play ()
+void video_playback_frame (struct display *disp)
 {
-	printf ("buffer size: %i\n", FRAME_SIZE * disp1.frame_count);
-	disp1.buffer = malloc (FRAME_SIZE * disp1.frame_count);
-	if (disp1.buffer == NULL)
+	GC9A01_display_buff(disp->buffer + (disp->frame_current*FRAME_SIZE), TFT_WIDTH * TFT_HEIGHT * 2);
+	disp->frame_current++;
+	if (disp->frame_current >= disp->frame_count)
+		disp->frame_current = 0;
+}
+
+long long current_timestamp(void)
+{
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
+}
+
+void video_play (struct display disp)
+{
+	printf ("buffer size: %i\n", FRAME_SIZE * disp.frame_count);
+	disp.buffer = malloc (FRAME_SIZE * disp.frame_count);
+	if (disp.buffer == NULL)
 	{
-		printf ("Error mallocing %i bytes for disp1 buffer\n", FRAME_SIZE * disp1.frame_count);
+		printf ("Error mallocing %i bytes for disp buffer\n", FRAME_SIZE * disp.frame_count);
 		exit (1);
 	}
-	video_load_buffer_raw (disp1.buffer);
+	video_load_buffer_raw (disp.buffer);
 	printf ("Starting playback\n");
 	running = 1;
 	while (running)
-		video_playback_raw (disp1.buffer);
-}
- /*
-int video_play ()
-{
-if (pingpong)
-    	{
-    		if (direction)
-  	  	{
-		    frame_num++;
-    		    if (frame_num >= frame_count)
-			direction = 0;
-  	  	}
-		else
+	{
+	
+		if (current_timestamp() > disp.last_service + disp.delay)
 		{
-			frame_num--;
-			if (frame_num <= 1)
-				direction = 1;
-		}
-    	}
-    	else
-    	{
-    		frame_num++;
-		if (frame_num > frame_count)
-		{
-			frame_num = 1;
-		end = clock();
-		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-		printf("%f\n", time_spent);
+			video_playback_frame (&disp);
+			disp.last_service = current_timestamp();
+		//	video_playback_raw (disp.buffer);
 		}
 	}
-   }
- 
 }
-*/
