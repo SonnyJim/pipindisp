@@ -1,10 +1,12 @@
 CFLAGS += -pg -g -Wall
 LIBS += -lbcm2835
-pipindisp:pipindisp.o GC9A01.o
-	gcc $(CFLAGS) -o pipindisp pipindisp.o GC9A01.o $(LIBS)
+pipindisp:pipindisp.o GC9A01.o cfg.o
+	gcc $(CFLAGS) -o pipindisp pipindisp.o GC9A01.o cfg.o $(LIBS)
 GC9A01.o:GC9A01.c GC9A01.h
-	gcc $(CFLAGS)   -c GC9A01.c -lbcm2835
+	gcc $(CFLAGS) -c GC9A01.c -lbcm2835
 pipindisp.o:pipindisp.c GC9A01.h 
 	gcc $(CFLAGS) -c pipindisp.c -lbcm2835
+cfg.o:cfg.c
+	gcc $(CFLAGS) -c cfg.c
 clean:
-	rm GC9A01.o pipindisp.o pipindisp
+	rm GC9A01.o pipindisp.o cfg.o pipindisp

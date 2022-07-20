@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/time.h>
+#include "cfg.h"
 
 #define HEADER_SIZE 54 //size of the BMP header
 #define WORKING_DIR "/usr/local/share/pipindisp/data/"
@@ -65,15 +66,15 @@ int bcm_init ()
 	}
     	printf ("New GID %i UID %i\n", getgid(), getuid());
 	GC9A01_begin();
-	bcm2835_spi_set_speed_hz (60000000); //Set the SPI speed higher, 6Mhz seems to be the limit for these displays
+	bcm2835_spi_set_speed_hz (61000000); //Set the SPI speed higher, 6Mhz seems to be the limit for these displays
 	return 1;
 }
 
 int display_init (struct display *disp)
 {
-	strcpy (disp->imagename, "Pink_swirl");
-	disp->frame_count = 24;
-	disp->delay = 80;
+	strcpy (disp->imagename, "");
+	disp->frame_count = 0;
+	disp->delay = 0;
 	disp->direction = 0;
 	disp->frame_current = 0;
 	disp->direction_current = 0;
@@ -87,12 +88,20 @@ int display_init (struct display *disp)
 
 void display_set (struct display *disp)
 {
-	printf ("Test %s\n", disp->imagename);
+	strcpy (disp->imagename, cfg[0].imagename);
+	disp->frame_count = cfg[0].frame_count;
+	disp->delay = cfg[0].delay;
 }
 
 int main(int argc, char **argv)
 {
 	signal(SIGINT, signal_cb_handler);
+
+	if (cfg_load () != 0)
+	{
+		fprintf (stderr, "Error loading config file\n");
+		return -1;
+	}
 	if (!bcm_init ())
 	{
 		printf ("bcm_init() failed\n");
